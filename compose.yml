@@ -1,0 +1,36 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    container_name: practice-go-game-ranking-app
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SERVER=sqlserver
+      - DB_USER=sa
+      - DB_PASSWORD=r00tP@ss3014
+      - DB_NAME=master
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: practice-go-game-ranking-db
+    user: root
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=r00tP@ss3014
+    ports:
+      - "1433:1433"
+    volumes:
+      - practice-go-game-ranking-db-store:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'r00tP@ss3014' -Q 'SELECT 1' -C"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  practice-go-game-ranking-db-store:
