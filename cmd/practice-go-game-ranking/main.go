@@ -1,85 +1,100 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
+	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	_ "github.com/denisenkom/go-mssqldb" // SQL Server用のドライバ
 )
 
-// ランキング
-type ranking struct {
-	id       int
-	gameName string
+// ユーザー
+type User struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
-type UserScore struct {
-	userId string
-	score  int
-}
-
-var db = make(map[string]string)
-
-func setupRouter() *gin.Engine {
-	// Disable Console Color
-	// gin.DisableConsoleColor()
-	r := gin.Default()
-
-	// Ping test
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
-	})
-
-	// Get user value
-	r.GET("/user/:name", func(c *gin.Context) {
-		user := c.Params.ByName("name")
-		value, ok := db[user]
-		if ok {
-			c.JSON(http.StatusOK, gin.H{"user": user, "value": value})
-		} else {
-			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
-		}
-	})
-
-	// Authorized group (uses gin.BasicAuth() middleware)
-	// Same than:
-	// authorized := r.Group("/")
-	// authorized.Use(gin.BasicAuth(gin.Credentials{
-	//	  "foo":  "bar",
-	//	  "manu": "123",
-	//}))
-	authorized := r.Group("/", gin.BasicAuth(gin.Accounts{
-		"foo":  "bar", // user:foo password:bar
-		"manu": "123", // user:manu password:123
-	}))
-
-	/* example curl for /admin with basicauth header
-	   Zm9vOmJhcg== is base64("foo:bar")
-
-		curl -X POST \
-	  	http://localhost:8080/admin \
-	  	-H 'authorization: Basic Zm9vOmJhcg==' \
-	  	-H 'content-type: application/json' \
-	  	-d '{"value":"bar"}'
-	*/
-	authorized.POST("admin", func(c *gin.Context) {
-		user := c.MustGet(gin.AuthUserKey).(string)
-
-		// Parse JSON
-		var json struct {
-			Value string `json:"value" binding:"required"`
-		}
-
-		if c.Bind(&json) == nil {
-			db[user] = json.Value
-			c.JSON(http.StatusOK, gin.H{"status": "ok"})
-		}
-	})
-
-	return r
-}
+// データベース
+var db *sql.DB
 
 func main() {
-	r := setupRouter()
-	// Listen and Server in 0.0.0.0:8080
-	r.Run(":8080")
+	// json返す練習
+	// http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
+	// 	u := User{
+	// 		ID:   1,
+	// 		Name: "hoge",
+	// 	}
+
+	// 	w.Header().Set("Content-Type", "application/json")
+
+	// 	j, err := json.MarshalIndent(u, "", "    ")
+	// 	if err != nil {
+	// 		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// 	_, err = w.Write(j)
+	// 	if err != nil {
+	// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// })
+
+	// データベースへの接続
+	var err error
+	db, err = sql.Open("sqlserver", "sqlserver://sa:r00tP@ss3014@db:1433?database=master&encrypt=disable")
+	if err != nil {
+		log.Fatalf("Failed to connect to the database: %v", err)
+	}
+	defer db.Close()
+
+	// エンドポイントを設定
+	http.HandleFunc("/users", usersHandler)
+
+	// サーバを起動
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+// /usersエンドポイント ハンドラー
+func usersHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodPost {
+		createUser(w, r)
+		return
+	}
+
+	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+}
+
+// ユーザー作成処理
+func createUser(w http.ResponseWriter, r *http.Request) {
+	// HTTPヘッダをセット
+	w.Header().Set("Content-Type", "application/json")
+
+	// リクエストボディからデータを取得
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		log.Printf("Failed to decode request body: %v", err)
+		return
+	}
+
+	// データベースにユーザーを挿入しつつ、挿入時のIDを取得
+	query := "INSERT INTO users (name) OUTPUT INSERTED.ID VALUES (@p1)"
+	var userID int
+	err := db.QueryRow(query, sql.Named("p1", u.Name)).Scan(&userID)
+	if err != nil {
+		http.Error(w, "Failed to insert user into database", http.StatusInternalServerError)
+		log.Printf("Database error: %v", err)
+		return
+	}
+
+	// レスポンス
+	w.WriteHeader(http.StatusCreated)
+	u.ID = userID
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		log.Printf("Failed to write response: %v", err)
+	}
 }
