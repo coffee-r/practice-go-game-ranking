@@ -66,5 +66,12 @@ Go言語で作るゲームランキングWebAPIの習作です。
 * GET /rankings/{ranking_id}/user_rankings/{user_id}
 * PUT /rankings/{ranking_id}/user_rankings/{user_id}
 
+## ライブラリ
+
+* Echo (ルーティング、パラメタのやり取り、jsonレスポンスを楽にしたいので)
+* Bun (SQL操作を楽にしたいので)
+
 ## struct/interface図
+
+* オニオンアーキテクチャっぽい構造とする
 goplantuml

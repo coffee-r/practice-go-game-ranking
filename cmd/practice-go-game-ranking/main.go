@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"practice-go-game-ranking/pkg/ranking/infrastructure"
+	"practice-go-game-ranking/pkg/ranking/usecase"
 	"strconv"
 	"time"
 
@@ -84,8 +86,52 @@ func main() {
 		}
 	})
 
-	// エンドポイントを設定
-	e.GET("/users", getUsers)
+	// ユーザーリポジトリ
+	userRepository := &infrastructure.UserRepository{DB: db}
+
+	// ユーザーユースケース
+	userUseCase := &usecase.UserUsecase{UserRepository: userRepository}
+
+	// ユーザー一覧を取得するエンドポイント
+	e.GET("/users", func(ctx echo.Context) error {
+		users, err := userUseCase.GetUsers(ctx.Request().Context())
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch users"})
+		}
+		return ctx.JSON(http.StatusOK, users)
+	})
+
+	// ユーザーを登録するエンドポイント
+	e.POST("/users", func(ctx echo.Context) error {
+		// リクエストを受ける構造体を定義
+		type UserCreateRequest struct {
+			Name string `json:"name" validate:"required,max=30"`
+		}
+
+		// リクエストを受ける構造体を生成
+		userCreateRequest := new(UserCreateRequest)
+
+		// リクエストボディをマッピング
+		if err := ctx.Bind(userCreateRequest); err != nil {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストボディが不正です。"})
+		}
+
+		// リクエストパラメタのバリデーション
+		if err := validator.Struct(userCreateRequest); err != nil {
+			return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error":   "バリデーションエラー",
+				"message": err.Error(),
+			})
+		}
+
+		user, err := userUseCase.CreateUser(ctx.Request().Context(), userCreateRequest.Name)
+
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch users"})
+		}
+		return ctx.JSON(http.StatusCreated, user)
+	})
+
 	e.POST("/users", createUser)
 	e.GET("/games", getGames)
 	e.POST("/games", createGame)
@@ -96,26 +142,6 @@ func main() {
 
 	// サーバを起動
 	e.Logger.Fatal(e.Start(":8080"))
-}
-
-// ユーザー一覧取得処理
-func getUsers(c echo.Context) error {
-	// コンテキストからdbを取得
-	db := c.Get("db").(*bun.DB)
-
-	// ユーザースライスを定義
-	var users []User
-
-	// クエリ実行
-	err := db.NewSelect().Model(&users).Scan(c.Request().Context())
-
-	// エラーハンドリング
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "ユーザー取得に失敗しました。"})
-	}
-
-	// JSON形式でクライアントに返す
-	return c.JSON(http.StatusOK, users)
 }
 
 // ユーザー作成処理
