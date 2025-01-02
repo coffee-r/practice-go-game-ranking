@@ -1,0 +1,90 @@
+openapi: 3.1.0
+x-stoplight:
+  id: ne2jk7fjkvull
+info:
+  title: User
+  version: '1.0'
+servers:
+  - url: 'http://localhost:8080'
+paths:
+  /users:
+    post:
+      summary: Create New User
+      operationId: post-user
+      responses:
+        '200':
+          description: User Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                New User Bob Fellow:
+                  value:
+                    id: 12
+                    firstName: Bob
+                    lastName: Fellow
+                    email: bob.fellow@gmail.com
+                    dateOfBirth: '1996-08-24'
+                    emailVerified: false
+                    createDate: '2020-11-18'
+        '400':
+          description: Missing Required Information
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  x-stoplight:
+                    id: yswx3chmni6f1
+                  description: ユーザー名
+              required:
+                - name
+            examples:
+              Create User Bob Fellow:
+                value:
+                  name: coffee-r
+        description: Post the necessary fields for the API to create a new user.
+      description: Create a new user.
+    parameters: []
+    get:
+      summary: ''
+      operationId: get-users
+      responses:
+        '200':
+          description: OK
+  /games:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-games
+components:
+  schemas:
+    User:
+      title: User
+      type: object
+      examples:
+        - id: 142
+          firstName: Alice
+          lastName: Smith
+          email: alice.smith@gmail.com
+          dateOfBirth: '1997-10-31'
+          emailVerified: true
+          signUpDate: '2019-08-24'
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the given user.
+        name:
+          type: string
+          x-stoplight:
+            id: p0z95faiqfyu0
+      required:
+        - id
+        - name
+      x-stoplight:
+        id: q2g1idwuejlr6
