@@ -134,6 +134,12 @@ paths:
         description: Post the necessary fields for the API to create a new user.
       description: Create a new user.
     parameters: []
+    get:
+      summary: ''
+      operationId: get-users
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     User:
