@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
+	"practice-go-game-ranking/pkg/ranking/controller"
 	"practice-go-game-ranking/pkg/ranking/infrastructure"
 	"practice-go-game-ranking/pkg/ranking/usecase"
 	"strconv"
@@ -13,6 +15,7 @@ import (
 
 	_ "github.com/denisenkom/go-mssqldb" // SQL Server用のドライバ
 	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mssqldialect"
@@ -63,19 +66,40 @@ type UserScoreRanking struct {
 }
 
 func main() {
-	// データベース (Bun)
-	sqldb, err := sql.Open("sqlserver", "sqlserver://sa:r00tP@ss3014@db:1433?database=master&encrypt=disable")
+	// .envファイルの読み込み
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	// 環境変数からポート番号を取得
+	port := os.Getenv("PORT")
+	if port == "" {
+		// デフォルトポート
+		port = "8080"
+	}
+
+	// データベース接続情報を環境変数から取得
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	dbEncrypt := os.Getenv("DB_ENCRYPT")
+
+	// データベース接続
+	dsn := "sqlserver://" + dbUser + ":" + dbPassword + "@" + dbHost + ":" + dbPort + "?database=" + dbName + "&encrypt=" + dbEncrypt
+	sqldb, err := sql.Open("sqlserver", dsn)
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer sqldb.Close()
 	db := bun.NewDB(sqldb, mssqldialect.New())
 
-	// バリデーター
-	validator := validator.New()
-
 	// Echo
 	e := echo.New()
+
+	// バリデーター
+	validator := validator.New()
 
 	// ミドルウェアで `db` と `validator` を Context に登録
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -86,53 +110,15 @@ func main() {
 		}
 	})
 
-	// ユーザーリポジトリ
-	userRepository := &infrastructure.UserRepository{DB: db}
+	// 依存関係のセットアップ
+	userRepository := infrastructure.NewUserRepository(db)
+	userUseCase := usecase.NewUserUseCase(userRepository)
+	userController := controller.NewUserController(userUseCase, validator, db)
 
-	// ユーザーユースケース
-	userUseCase := &usecase.UserUsecase{UserRepository: userRepository}
+	// エンドポイント定義とControllerのマッピング
+	e.GET("/users", userController.GetUsers)
+	e.POST("/users", userController.CreateUser)
 
-	// ユーザー一覧を取得するエンドポイント
-	e.GET("/users", func(ctx echo.Context) error {
-		users, err := userUseCase.GetUsers(ctx.Request().Context())
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch users"})
-		}
-		return ctx.JSON(http.StatusOK, users)
-	})
-
-	// ユーザーを登録するエンドポイント
-	e.POST("/users", func(ctx echo.Context) error {
-		// リクエストを受ける構造体を定義
-		type UserCreateRequest struct {
-			Name string `json:"name" validate:"required,max=30"`
-		}
-
-		// リクエストを受ける構造体を生成
-		userCreateRequest := new(UserCreateRequest)
-
-		// リクエストボディをマッピング
-		if err := ctx.Bind(userCreateRequest); err != nil {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストボディが不正です。"})
-		}
-
-		// リクエストパラメタのバリデーション
-		if err := validator.Struct(userCreateRequest); err != nil {
-			return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
-				"error":   "バリデーションエラー",
-				"message": err.Error(),
-			})
-		}
-
-		user, err := userUseCase.CreateUser(ctx.Request().Context(), userCreateRequest.Name)
-
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch users"})
-		}
-		return ctx.JSON(http.StatusCreated, user)
-	})
-
-	e.POST("/users", createUser)
 	e.GET("/games", getGames)
 	e.POST("/games", createGame)
 	e.GET("/rankings", getRankings)
@@ -141,7 +127,7 @@ func main() {
 	e.PUT("/rankings/:ranking_id/user_rankings/:user_id", upsertUserScore)
 
 	// サーバを起動
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(":" + port))
 }
 
 // ユーザー作成処理

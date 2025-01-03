@@ -9,7 +9,7 @@ import (
 
 // ユーザーユースケース
 type UserUsecase struct {
-	UserRepository domain.UserRepositoryInterface
+	userRepository domain.UserRepositoryInterface
 }
 
 // ユーザーDTO
@@ -20,17 +20,23 @@ type UserDto struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// ユースケースを生成する
+func NewUserUseCase(r domain.UserRepositoryInterface) *UserUsecase {
+	return &UserUsecase{
+		userRepository: r,
+	}
+}
+
 // ユーザー一覧を取得する
 func (u *UserUsecase) GetUsers(ctx context.Context) ([]UserDto, error) {
 	// ユーザー一覧をリポジトリから取得する
-	users, err := u.UserRepository.FindAll(ctx)
+	users, err := u.userRepository.FindAll(ctx)
 	if err != nil {
-		log.Printf("Error occurred: %v", err)
+		log.Printf("[UserUsecase.GetUsers] Failed to fetch users: %v", err)
 		return nil, err
 	}
 
-	// ユースケース層の構造体にマッピング
-	// スライスの容量を事前に確保
+	// ユースケース層の構造体にマッピング (スライスの容量を事前に確保)
 	userDtos := make([]UserDto, 0, len(users))
 	for _, u := range users {
 		// ユーザーDTOにマッピング
@@ -53,16 +59,16 @@ func (u *UserUsecase) CreateUser(ctx context.Context, name string) (*UserDto, er
 
 	// エラーハンドリング
 	if err != nil {
-		log.Printf("Error occurred: %v", err)
+		log.Printf("[UserUsecase.CreateUser] invalid user_name: %v", err)
 		return nil, err
 	}
 
 	// リポジトリを使ってユーザーを登録する
-	user, err := u.UserRepository.Create(ctx, userName)
+	user, err := u.userRepository.Create(ctx, userName)
 
 	// エラーハンドリング
 	if err != nil {
-		log.Printf("Error occurred: %v", err)
+		log.Printf("[UserUsecase.CreateUser] Failed to create new user: %v", err)
 		return nil, err
 	}
 

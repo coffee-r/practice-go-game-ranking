@@ -19,7 +19,13 @@ type User struct {
 
 // ユーザーリポジトリ
 type UserRepository struct {
-	DB *bun.DB
+	db *bun.DB
+}
+
+func NewUserRepository(bun *bun.DB) *UserRepository {
+	return &UserRepository{
+		db: bun,
+	}
 }
 
 // ユーザー一覧を取得する
@@ -28,7 +34,7 @@ func (r *UserRepository) FindAll(ctx context.Context) ([]domain.User, error) {
 	var users []User
 
 	// クエリ実行
-	err := r.DB.NewSelect().Model(&users).Scan(ctx)
+	err := r.db.NewSelect().Model(&users).Scan(ctx)
 
 	// エラーハンドリング
 	if err != nil {
@@ -78,14 +84,14 @@ func (r *UserRepository) Create(ctx context.Context, name domain.UserName) (*dom
 	}
 
 	// ユーザー登録クエリを実行
-	_, err = r.DB.NewInsert().Model(user).Exec(ctx)
+	_, err = r.db.NewInsert().Model(user).Exec(ctx)
 	if err != nil {
 		log.Printf("Error occurred: %v", err)
 		return nil, err
 	}
 
 	// 挿入後に ID を基に再取得
-	err = r.DB.NewSelect().Model(user).Where("id = ?", user.ID).Scan(ctx)
+	err = r.db.NewSelect().Model(user).Where("id = ?", user.ID).Scan(ctx)
 	if err != nil {
 		log.Printf("Error occurred: %v", err)
 		return nil, err
