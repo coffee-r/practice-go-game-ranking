@@ -7,23 +7,23 @@ import (
 )
 
 // ランキングユースケース
-type RankingUsecase struct {
+type RankingUseCase struct {
 	rankingRepository domain.RankingRepositoryInterface
 }
 
 // ユースケースを生成する
-func NewRankingUseCase(r domain.RankingRepositoryInterface) *RankingUsecase {
-	return &RankingUsecase{
+func NewRankingUseCase(r domain.RankingRepositoryInterface) *RankingUseCase {
+	return &RankingUseCase{
 		rankingRepository: r,
 	}
 }
 
 // ランキング一覧を取得する
-func (u *RankingUsecase) GetRankings(ctx context.Context) ([]RankingDto, error) {
+func (rankingUseCase *RankingUseCase) GetRankings(ctx context.Context) ([]RankingDto, error) {
 	// ランキング一覧をリポジトリから取得する
-	rankings, err := u.rankingRepository.FindAll(ctx)
+	rankings, err := rankingUseCase.rankingRepository.FindAll(ctx)
 	if err != nil {
-		log.Printf("[RankingUsecase.GetRankings] Failed to fetch rankings: %v", err)
+		log.Printf("[RankingUseCase.GetRankings] Failed to fetch rankings: %v", err)
 		return nil, err
 	}
 
@@ -44,35 +44,35 @@ func (u *RankingUsecase) GetRankings(ctx context.Context) ([]RankingDto, error) 
 }
 
 // ランキングを新規登録する
-func (u *RankingUsecase) CreateRanking(ctx context.Context, name string) (*RankingDto, error) {
+func (rankingUseCase *RankingUseCase) CreateRanking(ctx context.Context, name string) (*RankingDto, error) {
 	// ランキング名
 	rankingName, err := domain.NewRankingName(name)
 
 	// エラーハンドリング
 	if err != nil {
-		log.Printf("[RankingUsecase.CreateRanking] invalid ranking_name: %v", err)
+		log.Printf("[RankingUseCase.CreateRanking] invalid ranking_name: %v", err)
 		return nil, err
 	}
 
 	// ランキング名が既に登録されているか確認
-	ranking, err := u.rankingRepository.FindByName(ctx, rankingName)
+	ranking, err := rankingUseCase.rankingRepository.FindByName(ctx, rankingName)
 
 	// エラーハンドリング
 	if err != nil {
-		log.Printf("[RankingUsecase.CreateRanking] Failed to fetch ranking: %v", err)
+		log.Printf("[RankingUseCase.CreateRanking] Failed to fetch ranking: %v", err)
 		return nil, err
 	}
 	if ranking != nil {
-		log.Printf("[RankingUsecase.CreateRanking] ranking name %v already used", err)
+		log.Printf("[RankingUseCase.CreateRanking] ranking name %v already used", err)
 		return nil, err
 	}
 
 	// リポジトリを使ってランキングを登録する
-	user, err := u.rankingRepository.Create(ctx, rankingName)
+	user, err := rankingUseCase.rankingRepository.Create(ctx, rankingName)
 
 	// エラーハンドリング
 	if err != nil {
-		log.Printf("[RankingUsecase.CreateRanking] Failed to create new ranking: %v", err)
+		log.Printf("[RankingUseCase.CreateRanking] Failed to create new ranking: %v", err)
 		return nil, err
 	}
 

@@ -1,5 +1,5 @@
 package usecase
 
-type UserScoreRankingQueryServiceInterface interface {
+type UserScoreQueryServiceInterface interface {
 	FetchOrderByScoreDesc(rankingID int) ([]UserScoreRankingDto, error)
 }

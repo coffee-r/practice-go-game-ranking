@@ -11,15 +11,15 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// ユーザーコントローラー
-type UserController struct {
-	userUseCase *usecase.UserUseCase
+// ユーザースコアコントローラー
+type UserScoreController struct {
+	userUseCase *usecase.UserScore
 	validator   *validator.Validate
 	db          *bun.DB
 }
 
 // コントローラーを生成する
-func NewUserController(u *usecase.UserUseCase, v *validator.Validate, d *bun.DB) *UserController {
+func NewUserController(u *usecase.UserUsecase, v *validator.Validate, d *bun.DB) *UserController {
 	return &UserController{
 		userUseCase: u,
 		validator:   v,

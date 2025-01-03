@@ -13,13 +13,13 @@ Go言語で作るゲームランキングWebAPIの習作です。
 * ランキングを登録できる
 * ランキング名はUniqueである必要がある
 * ランキングを一覧を取得できる
-* ランキングに対してユーザーと紐付けてユーザースコアを登録できる
-* あるランキングに対して登録できるスコアは1ユーザーにつき1つまでで、同じユーザーがスコアを登録しようとした時にはスコアが高い方の値を優先して更新する・ないしは更新しない
-* スコアの値が同じ場合は登録日時が古い方を優先してランク付けする
-* ランキングのスコアは整数型とし、昇順でランク付けする
-* ランキングを指定してスコア一覧をソート済みで取得できる、ランクがつく
-* ランキングとユーザーを指定して現在のランクを取得できる
+* ランキングに対してユーザーと紐付けてユーザーハイスコアを登録できる
+* あるランキングに対して登録できるハイスコアは1ユーザーにつき1つまでで、同じユーザーがスコアを登録しようとした時にはスコアが高い方の値を優先して更新する・ないしは更新しない
+* ハイスコアの値が同じ場合は登録日時が古い方を優先してランク付けする
+* ランキングのハイスコアは整数型とし、値の大きい順でランク付けする
+* ランキングを指定してユーザーハイスコア一覧をソート済みで取得できる、ランクがつく
 * ゲーム登録機能は一旦実装対象外
+* ランキングとユーザーを指定して現在のランクを取得できる機能は一旦実装対象外
 * ゲーム別ランキング別ユーザースコアランキングは一旦実装対象外
 * Delete系の機能は一旦実装対象外
 * 認可については一旦実装対象外
@@ -30,47 +30,17 @@ Go言語で作るゲームランキングWebAPIの習作です。
 
 ## データベーステーブル設計
 
-* users
-    * id (primary)
-    * name
-    * created_at
-    * updated_at
-* games
-    * id (primary)
-    * name
-    * created_at
-    * updated_at
-* rankings
-    * id (primary)
-    * game_id (foreign key)
-    * name
-    * created_at
-    * updated_at
-* user_rankings
-    * ranking_id (primary)
-    * user_id (primary、foreign key)
-    * score ※integer
-    * created_at
-    * updated_at
+* migration.sqlに記載
 
 ## REST API設計
 
-* GET /users
-* POST /users
-* GET /games
-* POST /games
-* GET /rankings
-* POST /rankings
-* GET /rankings/{ranking_id}/user_rankings
-* GET /rankings/{ranking_id}/user_rankings/{user_id}
-* PUT /rankings/{ranking_id}/user_rankings/{user_id}
+* openapi/配下に記載
 
 ## ライブラリ
 
 * Echo (ルーティング、パラメタのやり取り、jsonレスポンスを楽にしたいので)
 * Bun (SQL操作を楽にしたいので)
 
-## struct/interface図
+## struct依存関係
 
-* オニオンアーキテクチャっぽい構造とする
-goplantuml
+* オニオンアーキテクチャっぽい構成とする

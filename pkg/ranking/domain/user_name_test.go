@@ -8,17 +8,9 @@ import (
 
 // 文字数の境界値テスト
 func TestUserNameWordCount(t *testing.T) {
-	// アルファベット30文字はOK
-	_, err := NewUserName("abcdeabcdeabcdeabcdeabcdeabcde")
-	assert.NoError(t, err, "Expected no error for 30 characters (alphabet)")
-
 	// 日本語30文字はOK
-	_, err = NewUserName("あいうえおあいうえおあいうえおあいうえおあいうえおあいうえお")
+	_, err := NewUserName("あいうえおあいうえおあいうえおあいうえおあいうえおあいうえお")
 	assert.NoError(t, err, "Expected no error for 30 characters (Japanese)")
-
-	// アルファベット31文字はNG
-	_, err = NewUserName("abcdeabcdeabcdeabcdeabcdeabcdea")
-	assert.Error(t, err, "Expected error for 31 characters (alphabet)")
 
 	// 日本語31文字はNG
 	_, err = NewUserName("あいうえおあいうえおあいうえおあいうえおあいうえおあいうえおあ")

@@ -9,7 +9,7 @@ servers:
 paths:
   /users:
     post:
-      summary: Create New User
+      summary: ユーザーの新規作成
       operationId: post-user
       responses:
         '200':
@@ -48,20 +48,61 @@ paths:
                 value:
                   name: coffee-r
         description: Post the necessary fields for the API to create a new user.
-      description: Create a new user.
+      description: ユーザーを新規に作成します。
     parameters: []
     get:
-      summary: ''
+      summary: ユーザー一覧の取得
       operationId: get-users
       responses:
         '200':
           description: OK
-  /games:
+      description: ユーザー一覧を取得します。
+  /rankings:
     get:
-      summary: Your GET endpoint
+      summary: ランキング一覧の取得
       tags: []
       responses: {}
-      operationId: get-games
+      operationId: get-rankings
+      description: ランキングの一覧を取得します。
+    post:
+      summary: ランキングの新規作成
+      operationId: post-rankings
+      responses:
+        '200':
+          description: OK
+      description: ランキングを新規に作成します。
+  '/rankings/{ranking_id}/user_high_scores':
+    parameters:
+      - schema:
+          type: string
+        name: ranking_id
+        in: path
+        required: true
+    get:
+      summary: ユーザーのハイスコア一覧の取得
+      tags: []
+      responses: {}
+      operationId: get-rankings-ranking_id-user_scores
+      description: あるランキングにおけるユーザーのハイスコア一覧を取得します。
+  '/rankings/{ranking_id}/user_high_scores/{user_id}':
+    parameters:
+      - schema:
+          type: string
+        name: ranking_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: user_id
+        in: path
+        required: true
+    put:
+      summary: ''
+      operationId: put-rankings-ranking_id-user_scores-user_id
+      responses:
+        '200':
+          description: OK
+      description: あるランキングにおけるユーザーのハイスコアを登録・更新します。
 components:
   schemas:
     User:
