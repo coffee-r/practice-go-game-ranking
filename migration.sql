@@ -6,22 +6,12 @@ CREATE TABLE users (
     updated_at DATETIME2 DEFAULT GETDATE()
 );
 
--- ゲームテーブル
-CREATE TABLE games (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(100) NOT NULL,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE()
-)
-
 -- ランキングテーブル
 CREATE TABLE rankings (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    name NVARCHAR(100) NOT NULL,
-    game_id INT NOT NULL,
+    name NVARCHAR(100) NOT NULL, -- ユニークにしたい
     created_at DATETIME2 DEFAULT GETDATE(),
     updated_at DATETIME2 DEFAULT GETDATE(),
-    CONSTRAINT fk_game_id FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
 )
 
 -- ユーザースコアテーブル

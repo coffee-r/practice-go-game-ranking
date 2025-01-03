@@ -22,10 +22,43 @@ type UserRepository struct {
 	db *bun.DB
 }
 
+// リポジトリを生成する
 func NewUserRepository(bun *bun.DB) *UserRepository {
 	return &UserRepository{
 		db: bun,
 	}
+}
+
+// ユーザーを取得する
+func (r *UserRepository) FindByID(ctx context.Context, id int) (*domain.User, error) {
+	// ユーザー
+	user := new(User)
+
+	// クエリ実行
+	err := r.db.NewSelect().Model(&user).Where("id = ?", id).Scan(ctx)
+
+	// エラーハンドリング
+	if err != nil {
+		log.Printf("Error occurred: %v", err)
+		return nil, err
+	}
+
+	// ユーザー名
+	userName, err := domain.NewUserName(user.Name)
+
+	// エラーハンドリング
+	if err != nil {
+		log.Printf("Error occurred: %v", err)
+		return nil, err
+	}
+
+	// ドメインのユーザーを返す
+	return &domain.User{
+		ID:        user.ID,
+		Name:      userName,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, nil
 }
 
 // ユーザー一覧を取得する
