@@ -59,14 +59,19 @@ func main() {
 	rankingRepository := infrastructure.NewRankingRepository(db)
 	rankingUseCase := usecase.NewRankingUseCase(rankingRepository)
 	rankingController := controller.NewRankingController(rankingUseCase, validator, db)
+	userRankingQueryService := infrastructure.NewUserRankingQueryService(db)
+	userRankingController := controller.NewUserRankingController(userRankingQueryService, validator)
+	userHighScoreRepository := infrastructure.NewUserHighScoreRepository(db)
+	userHighScoreUseCase := usecase.NewUserHighScoreUseCase(rankingRepository, userRepository, userHighScoreRepository)
+	userHighScoreController := controller.NewUserHighScoreController(userHighScoreUseCase, validator, db)
 
 	// エンドポイント定義とControllerのマッピング
 	e.GET("/users", userController.GetUsers)
 	e.POST("/users", userController.CreateUser)
 	e.GET("/rankings", rankingController.GetRankings)
 	e.POST("/rankings", rankingController.CreateRanking)
-	e.GET("/rankings/:ranking_id/user_high_scores")
-	e.PUT("/rankings/:ranking_id/user_high_scores/:user_id")
+	e.GET("/rankings/:ranking_id/user_high_scores", userRankingController.GetUserRanking)
+	e.PUT("/rankings/:ranking_id/user_high_scores/:user_id", userHighScoreController.StoreHighScore)
 
 	// サーバを起動
 	e.Logger.Fatal(e.Start(":" + port))
